@@ -1,0 +1,20 @@
+{
+  "name": "app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "express": "^4.19.2",
+    "form-data": "^4.0.0",
+    "googlethis": "github:lifecodeof/google-this",
+    "jsdom": "^24.0.0",
+    "node-fetch": "^3.3.2"
+  },
+  "type": "module"
+}
