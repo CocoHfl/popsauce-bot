@@ -5,6 +5,7 @@ import FormData from 'form-data';
 import fs from 'fs';
 import jsdom from 'jsdom';
 import google from 'googlethis';
+import fetch from 'node-fetch';
 const { JSDOM } = jsdom;
 
 const app = express();
