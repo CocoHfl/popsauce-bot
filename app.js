@@ -54,20 +54,13 @@ app.post('/api/searchImage', (req, res) => {
     let binaryData;
     base64Data = req.body['Data'].replace(/^data:image\/jpeg;base64,/, "");
     base64Data += base64Data.replace('+', ' ');
-    binaryData = new Buffer(base64Data, 'base64').toString('binary');
-
-    fs.writeFile("image/out.jpeg", binaryData, "binary", function (err) {
-        if (err) {
-            console.log(err);
-        } else {
-            callGoogleLens(res);
-        }
-    });
+    binaryData = Buffer.from(base64Data, 'base64');
+    callGoogleLens(binaryData, res);
 })
 
-function callGoogleLens(res) {
+function callGoogleLens(binaryData, res) {
     const form = new FormData();
-    form.append('encoded_image', fs.readFileSync('image/out.jpeg'), '/path/to/image.jpg');
+    form.append('encoded_image', binaryData, 'image.jpg');
 
     const options = {
         hostname: 'lens.google.com',
