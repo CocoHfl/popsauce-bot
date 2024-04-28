@@ -85,8 +85,7 @@ function callGoogleLens(binaryData, res) {
 
             getLensResults(gLensUrl)
                 .then(results => {
-                    // Returning first 10 results
-                    res.status(200).send(results.slice(0, 10));
+                    res.status(200).send(results);
                 })
                 .catch(function (err) {
                     console.log('Failed to fetch page: ', err);
@@ -108,14 +107,14 @@ async function getLensResults(url) {
     await page.setDefaultNavigationTimeout(60000);
     await page.goto(url);
 
-    const results = await getResultsFromPage(page);
+    const results = await getResultsFromPage(page, 10);
 
     await browser.close();
 
     return results;
 }
 
-async function getResultsFromPage(page) {
+async function getResultsFromPage(page, maxResults) {
     const rejectCookiesBtn = "#yDmH0d > c-wiz > div > div > div > div.NIoIEf > div.G4njw > div.AIC7ge > div.CxJub > div.VtwTSb > form:nth-child(1) > div > div > button"
     page.$eval(rejectCookiesBtn, form => form.click());
 
@@ -124,19 +123,22 @@ async function getResultsFromPage(page) {
     let results = [];
 
     let associatedSearches = await page.$$(".LzliJc");
-    await pushResults(associatedSearches, page, results);
+    await pushResults(associatedSearches, page, results, maxResults);
+
+    if (results.length >= maxResults) return results;
 
     let resultDescriptions = await page.$$(".UAiK1e");
-    await pushResults(resultDescriptions, page, results);
-    
+    await pushResults(resultDescriptions, page, results, maxResults);
+
     return results;
 }
 
-async function pushResults(elements, page, results) {
+async function pushResults(elements, page, results, maxResults) {
     if (elements != null) {
-        await Promise.all(elements.map(async element => {
+        for(let element of elements) {
+            if(results.length >= maxResults) return;
             let value = await page.evaluate(el => el.textContent, element);
             results.push(value);
-        }));
+        }
     }
 }
