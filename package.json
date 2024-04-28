@@ -14,7 +14,10 @@
     "form-data": "^4.0.0",
     "googlethis": "github:lifecodeof/google-this",
     "jsdom": "^24.0.0",
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^3.3.2",
+    "puppeteer": "^22.7.1",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
   },
   "type": "module"
 }
