@@ -2,11 +2,11 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import https from 'https';
 import FormData from 'form-data';
-import fs from 'fs';
-import jsdom from 'jsdom';
 import google from 'googlethis';
-import fetch from 'node-fetch';
-const { JSDOM } = jsdom;
+import puppeteer from "puppeteer-extra";
+import StealthPlugin from "puppeteer-extra-plugin-stealth";
+
+puppeteer.use(StealthPlugin());
 
 const app = express();
 const PORT = 5000;
@@ -37,8 +37,8 @@ app.post('/api/askQuestion', async (req, res) => {
     const response = await google.search(req.body['Data'], options);
 
     let answers = {
-        title : [],
-        descriptions : []
+        title: [],
+        descriptions: []
     };
 
     response.results.forEach(element => {
@@ -76,32 +76,17 @@ function callGoogleLens(binaryData, res) {
             chunks.push(chunk);
         });
 
-        httpRes.on('end', function () {
+        httpRes.on('end', async function () {
             const body = Buffer.concat(chunks).toString();
             const id = body.split('search?p=')[1].split('>')[0];
             const gLensUrl = 'https://lens.google.com/search?p=' + id;
 
             console.log('Google Lens URL', gLensUrl);
 
-            fetch(gLensUrl)
-                .then(function (response) {
-                    return response.text()
-                })
-                .then(function (html) {
-                    const dom = new JSDOM(html);
-                    const results = dom.serialize().split(' results"')[1]
-                    const regex = /"[^"]*\s[^"]*"/g;
-                    const matches = results.match(regex);
-                    let searchResults = [];
-
-                    //Skipping first index ("See exact matches" text)
-                    //Returning 10 results
-                    for (let index = 1; index < 11; index++) {
-                        searchResults.push(matches[index]);
-                    }
-
-                    console.log('Results', searchResults);
-                    res.status(200).send(searchResults);
+            getLensResults(gLensUrl)
+                .then(results => {
+                    // Returning first 10 results
+                    res.status(200).send(results.slice(0, 10));
                 })
                 .catch(function (err) {
                     console.log('Failed to fetch page: ', err);
@@ -110,4 +95,50 @@ function callGoogleLens(binaryData, res) {
     });
 
     form.pipe(req);
+}
+
+async function getLensResults(url) {
+    const browser = await puppeteer.launch({
+        headless: true,
+        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
+
+    const page = await browser.newPage();
+
+    await page.setDefaultNavigationTimeout(60000);
+    await page.goto(url);
+
+    const results = await getResultsFromPage(page);
+
+    await browser.close();
+
+    return results;
+}
+
+async function getResultsFromPage(page) {
+    const rejectCookiesBtn = "#yDmH0d > c-wiz > div > div > div > div.NIoIEf > div.G4njw > div.AIC7ge > div.CxJub > div.VtwTSb > form:nth-child(1) > div > div > button"
+
+    await Promise.all([
+        page.$eval(rejectCookiesBtn, form => form.click()),
+        page.waitForNavigation({ waitUntil: 'networkidle0' }),
+    ]);
+
+    let results = [];
+
+    let associatedSearches = await page.$$('.LzliJc');
+    await pushResults(associatedSearches, page, results);
+
+    let resultDescriptions = await page.$$('.UAiK1e');
+    await pushResults(resultDescriptions, page, results);
+
+    return results;
+}
+
+async function pushResults(elements, page, results) {
+    if (elements != null) {
+        await Promise.all(elements.map(async element => {
+            let value = await page.evaluate(el => el.textContent, element);
+            results.push(value);
+        }));
+    }
 }
