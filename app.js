@@ -117,20 +117,18 @@ async function getLensResults(url) {
 
 async function getResultsFromPage(page) {
     const rejectCookiesBtn = "#yDmH0d > c-wiz > div > div > div > div.NIoIEf > div.G4njw > div.AIC7ge > div.CxJub > div.VtwTSb > form:nth-child(1) > div > div > button"
+    page.$eval(rejectCookiesBtn, form => form.click());
 
-    await Promise.all([
-        page.$eval(rejectCookiesBtn, form => form.click()),
-        page.waitForNavigation({ waitUntil: 'networkidle0' }),
-    ]);
+    await page.waitForSelector(".G19kAf");
 
     let results = [];
 
-    let associatedSearches = await page.$$('.LzliJc');
+    let associatedSearches = await page.$$(".LzliJc");
     await pushResults(associatedSearches, page, results);
 
-    let resultDescriptions = await page.$$('.UAiK1e');
+    let resultDescriptions = await page.$$(".UAiK1e");
     await pushResults(resultDescriptions, page, results);
-
+    
     return results;
 }
 
