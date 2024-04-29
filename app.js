@@ -88,6 +88,7 @@ function callGoogleLens(binaryData, res) {
                     res.status(200).send(results);
                 })
                 .catch(function (err) {
+                    res.status(500).send();
                     console.log('Failed to fetch page: ', err);
                 });
         });
