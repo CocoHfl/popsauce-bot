@@ -51,10 +51,8 @@ setInterval(async function () {
                 }
             }
 
-            if(!milestone.playerStatesByPeerId[selfPeerId]?.hasFoundSource) {
-                await delay(500);
-                //TODO
-            }
+            if(!milestone.playerStatesByPeerId[selfPeerId]?.hasFoundSource)
+                socket.emit("submitGuess", results[0].charAt(0));
 
             let endTime = new Date();
             let timeElapsed = endTime - startTime;
