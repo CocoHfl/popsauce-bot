@@ -5,6 +5,7 @@ import FormData from 'form-data';
 import google from 'googlethis';
 import puppeteer from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
+import svg2img from 'svg2img';
 
 puppeteer.use(StealthPlugin());
 
@@ -57,9 +58,24 @@ app.post('/api/askQuestion', async (req, res) => {
 app.post('/api/searchImage', (req, res) => {
     let base64Data;
     let binaryData;
-    base64Data = req.body['Data'].replace(/^data:image\/jpeg;base64,/, "");
-    base64Data += base64Data.replace('+', ' ');
-    binaryData = Buffer.from(base64Data, 'base64');
+
+    if (req.body['Data'].includes("svg+xml")) {
+        svg2img(
+            req.body['Data'],
+            function (error, buffer) {
+                if (error) {
+                    res.status(500).send();
+                    console.log('Failed to convert svg: ', err);
+                }
+
+                binaryData = buffer;
+            });
+    } else {
+        base64Data = req.body['Data'].replace(/^data:image\/jpeg;base64,/, "");
+        base64Data += base64Data.replace('+', ' ');
+        binaryData = Buffer.from(base64Data, 'base64');
+    }
+
     callGoogleLens(binaryData, res);
 })
 
@@ -82,11 +98,15 @@ function callGoogleLens(binaryData, res) {
         });
 
         httpRes.on('end', async function () {
-            const body = Buffer.concat(chunks).toString();
-            const id = body.split('search?p=')[1].split('>')[0];
-            const gLensUrl = 'https://lens.google.com/search?p=' + id;
-
-            console.log('Google Lens URL', gLensUrl);
+            try {
+                const body = Buffer.concat(chunks).toString();
+                const id = body.split('search?p=')[1].split('>')[0];
+                const gLensUrl = 'https://lens.google.com/search?p=' + id;              
+                console.log('Google Lens URL', gLensUrl);
+            } catch {
+                res.status(500).send();
+                console.log('Failed to construct Google Lens URL: ', err);
+            }
 
             getLensResults(gLensUrl)
                 .then(results => {
@@ -116,7 +136,7 @@ async function getLensResults(url) {
 
     const rejectCookiesBtn = "#yDmH0d > c-wiz > div > div > div > div.NIoIEf > div.G4njw > div.AIC7ge > div.CxJub > div.VtwTSb > form:nth-child(1) > div > div > button"
 
-    if(await page.$(rejectCookiesBtn))
+    if (await page.$(rejectCookiesBtn))
         page.$eval(rejectCookiesBtn, form => form.click());
 
     return await getResultsFromPage(page, 10);
@@ -140,8 +160,8 @@ async function getResultsFromPage(page, maxResults) {
 
 async function pushResults(elements, page, results, maxResults) {
     if (elements != null) {
-        for(let element of elements) {
-            if(results.length >= maxResults) return;
+        for (let element of elements) {
+            if (results.length >= maxResults) return;
             let value = await page.evaluate(el => el.textContent, element);
             results.push(value);
         }
