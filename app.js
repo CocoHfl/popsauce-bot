@@ -98,15 +98,11 @@ function callGoogleLens(binaryData, res) {
         });
 
         httpRes.on('end', async function () {
-            try {
-                const body = Buffer.concat(chunks).toString();
-                const id = body.split('search?p=')[1].split('>')[0];
-                const gLensUrl = 'https://lens.google.com/search?p=' + id;              
-                console.log('Google Lens URL', gLensUrl);
-            } catch {
-                res.status(500).send();
-                console.log('Failed to construct Google Lens URL: ', err);
-            }
+            const body = Buffer.concat(chunks).toString();
+            const id = body?.split('search?p=')[1]?.split('>')[0];
+            const gLensUrl = 'https://lens.google.com/search?p=' + id;
+
+            console.log('Google Lens URL', gLensUrl);
 
             getLensResults(gLensUrl)
                 .then(results => {
