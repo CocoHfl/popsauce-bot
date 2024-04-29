@@ -12,6 +12,11 @@ const app = express();
 const PORT = 5000;
 process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0;
 
+var browser = null;
+var page = null;
+
+initializeChrome();
+
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
 })
@@ -97,28 +102,27 @@ function callGoogleLens(binaryData, res) {
     form.pipe(req);
 }
 
-async function getLensResults(url) {
-    const browser = await puppeteer.launch({
+async function initializeChrome() {
+    browser = await puppeteer.launch({
         headless: true,
-        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+        args: ["--no-sandbox", "--disable-setuid-sandbox"]
     });
+    page = await browser.newPage();
+}
 
-    const page = await browser.newPage();
-
+async function getLensResults(url) {
     await page.setDefaultNavigationTimeout(60000);
     await page.goto(url);
 
-    const results = await getResultsFromPage(page, 10);
+    const rejectCookiesBtn = "#yDmH0d > c-wiz > div > div > div > div.NIoIEf > div.G4njw > div.AIC7ge > div.CxJub > div.VtwTSb > form:nth-child(1) > div > div > button"
 
-    await browser.close();
+    if(await page.$(rejectCookiesBtn))
+        page.$eval(rejectCookiesBtn, form => form.click());
 
-    return results;
+    return await getResultsFromPage(page, 10);
 }
 
 async function getResultsFromPage(page, maxResults) {
-    const rejectCookiesBtn = "#yDmH0d > c-wiz > div > div > div > div.NIoIEf > div.G4njw > div.AIC7ge > div.CxJub > div.VtwTSb > form:nth-child(1) > div > div > button"
-    page.$eval(rejectCookiesBtn, form => form.click());
-
     await page.waitForSelector(".G19kAf");
 
     let results = [];
