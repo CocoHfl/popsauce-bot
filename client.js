@@ -66,7 +66,7 @@ async function callApi(action, body) {
 
     let results = await fetch(nodeSrvUrl, {
         method: "POST",
-        body: JSON.stringify({ "Data": body }),
+        body: JSON.stringify({ "Data": body, "Language": rules.dictionaryId.value ?? 'en' }),
         headers: {
             "Content-Type": "application/json"
         }

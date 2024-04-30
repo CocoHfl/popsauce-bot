@@ -76,10 +76,10 @@ app.post('/api/searchImage', (req, res) => {
         binaryData = Buffer.from(base64Data, 'base64');
     }
 
-    callGoogleLens(binaryData, res);
+    callGoogleLens(binaryData, req.body['Language'], res);
 })
 
-function callGoogleLens(binaryData, res) {
+function callGoogleLens(binaryData, language, res) {
     const form = new FormData();
     form.append('encoded_image', binaryData, 'image.jpg');
 
@@ -100,7 +100,7 @@ function callGoogleLens(binaryData, res) {
         httpRes.on('end', async function () {
             const body = Buffer.concat(chunks).toString();
             const id = body?.split('search?p=')[1]?.split('>')[0];
-            const gLensUrl = 'https://lens.google.com/search?p=' + id;
+            const gLensUrl = `https://lens.google.com/search?hl=${language}&p=${id}`;
 
             console.log('Google Lens URL', gLensUrl);
 
