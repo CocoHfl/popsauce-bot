@@ -40,7 +40,7 @@ setInterval(async function () {
             let results = await callApi('searchImage', base64data);
 
             for(let result of results) {
-                let guess = result.trim().replace(/[^a-zA-Z ]/g, "").substring(0, 50);
+                let guess = result.trim().replace(/[\/\\#,+()$~%.'":*?<>{}-]/g, '').substring(0, 50);
                 socket.emit("submitGuess", guess);
 
                 await delay(100);
