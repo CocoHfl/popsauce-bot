@@ -3,9 +3,10 @@ import bodyParser from 'body-parser';
 import https from 'https';
 import FormData from 'form-data';
 import google from 'googlethis';
-import puppeteer from "puppeteer-extra";
-import StealthPlugin from "puppeteer-extra-plugin-stealth";
+import puppeteer from 'puppeteer-extra';
+import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import svg2img from 'svg2img';
+import wordFrequencyAnalyzer from './wordFrequencyAnalyzer.js';
 
 puppeteer.use(StealthPlugin());
 
@@ -43,12 +44,12 @@ app.post('/api/askQuestion', async (req, res) => {
     const response = await google.search(req.body['Data'], options);
 
     let answers = {
-        title: [],
+        titles: [],
         descriptions: []
     };
 
     response.results.forEach(element => {
-        answers.title.push(element.title);
+        answers.titles.push(element.title);
         answers.descriptions.push(element.description);
     });
 
@@ -106,7 +107,16 @@ function callGoogleLens(binaryData, language, res) {
 
             getLensResults(gLensUrl)
                 .then(results => {
-                    res.status(200).send(results);
+                    let guesses = Object.fromEntries(
+                        Object.entries(results).map(([key, arr]) => [key, arr.map(str => str.replace(/[\/\\#,+()$~%.'":*?<>{}-]/g, '').substring(0, 50))])
+                    );
+                    const analyzer = new wordFrequencyAnalyzer();
+                    const calculatedGuesses = analyzer.calculateWordFrequency(guesses.descriptions, 4);
+
+                    const firstValues = calculatedGuesses.map(subArray => subArray[0]);
+                    const mergedArray = guesses.associatedSearches.concat(firstValues);
+
+                    res.status(200).send(mergedArray);
                 })
                 .catch(function (err) {
                     res.status(500).send();
@@ -139,17 +149,20 @@ async function getLensResults(url) {
 }
 
 async function getResultsFromPage(page, maxResults) {
-    await page.waitForSelector(".G19kAf");
+    await page.waitForSelector(".G19kAf", {timeout: 5000});
 
-    let results = [];
+    let results = {
+        associatedSearches: [],
+        descriptions: []
+    };
 
     let associatedSearches = await page.$$(".LzliJc");
-    await pushResults(associatedSearches, page, results, maxResults);
+    await pushResults(associatedSearches, page, results.associatedSearches, maxResults);
 
     if (results.length >= maxResults) return results;
 
-    let resultDescriptions = await page.$$(".UAiK1e");
-    await pushResults(resultDescriptions, page, results, maxResults);
+    let descriptions = await page.$$(".UAiK1e");
+    await pushResults(descriptions, page, results.descriptions, maxResults);
 
     return results;
 }

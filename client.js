@@ -5,6 +5,8 @@ let textQuestionDetected = false;
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
+console.clear();
+
 setInterval(async function () { 
     if(milestone?.challenge?.text === undefined) {
         textQuestionDetected = false;
@@ -14,7 +16,7 @@ setInterval(async function () {
         console.log('Question texte détectée !');
         textQuestionDetected = true;
         let answers = await callApi('askQuestion', milestone?.challenge?.text);
-        answers.title.forEach(title => {
+        answers.titles.forEach(title => {
             console.log('title', title);
         });
         answers.descriptions.forEach(desc => {
@@ -39,14 +41,13 @@ setInterval(async function () {
             let base64data = reader.result;
             let results = await callApi('searchImage', base64data);
 
-            for(let result of results) {
-                let guess = result.trim().replace(/[\/\\#,+()$~%.'":*?<>{}-]/g, '').substring(0, 50);
-                socket.emit("submitGuess", guess);
-
+            for (let i = 0; i < results.length; i++) {
+                socket.emit("submitGuess", results[i]);
+                
                 await delay(100);
-
-                if(milestone.playerStatesByPeerId[selfPeerId]?.hasFoundSource) {
-                    console.log('Réponse trouvée !', guess);
+                
+                if (milestone.playerStatesByPeerId[selfPeerId]?.hasFoundSource) {
+                    console.log('Réponse trouvée !', results[i]);
                     break;
                 }
             }
