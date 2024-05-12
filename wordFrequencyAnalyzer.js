@@ -42,11 +42,13 @@ export default class WordFrequencyAnalyzer {
 
         sortedWords.forEach(([word, frequency]) => {
             const wordCount = word.split(' ').length;
-            if (wordCount === 1 && topWords.length === 0) {
-                topWords.push([word, frequency]);
-            }
-            else if (wordCount > 1 && !topPhrases[wordCount]) {
-                topPhrases[wordCount] = [word, frequency];
+            if (frequency > 1) { // Exclude words with frequency of one
+                if (wordCount === 1 && topWords.length === 0) {
+                    topWords.push([word, frequency]);
+                }
+                else if (wordCount > 1 && !topPhrases[wordCount]) {
+                    topPhrases[wordCount] = [word, frequency];
+                }
             }
         });
 
