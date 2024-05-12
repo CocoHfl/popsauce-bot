@@ -59,8 +59,8 @@ app.post('/api/askQuestion', async (req, res) => {
 app.post('/api/searchImage', (req, res) => {
     let base64Data;
     let binaryData;
-
-    if (req.body['Data'].includes("svg+xml")) {
+    
+    if(req.body['ImageType'] == "svg+xml") {
         svg2img(
             req.body['Data'],
             function (error, buffer) {
@@ -72,7 +72,7 @@ app.post('/api/searchImage', (req, res) => {
                 binaryData = buffer;
             });
     } else {
-        base64Data = req.body['Data'].replace(/^data:image\/jpeg;base64,/, "");
+        base64Data = req.body['Data'].replace(`data:image/${req.body['ImageType']};base64,`, "");
         base64Data += base64Data.replace('+', ' ');
         binaryData = Buffer.from(base64Data, 'base64');
     }

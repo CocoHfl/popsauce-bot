@@ -15,7 +15,12 @@ setInterval(async function () {
     if(milestone?.challenge?.text && !textQuestionDetected) {
         console.log('Question texte détectée !');
         textQuestionDetected = true;
-        let answers = await callApi('askQuestion', milestone?.challenge?.text);
+        const jsonBody = JSON.stringify({ 
+            "Data": milestone?.challenge?.prompt + ' ' + milestone?.challenge?.text, 
+            "Language": rules.dictionaryId.value ?? 'en'
+         });
+
+        let answers = await callApi('askQuestion', jsonBody);
         answers.titles.forEach(title => {
             console.log('title', title);
         });
@@ -39,7 +44,13 @@ setInterval(async function () {
     
         reader.onloadend = async function () {
             let base64data = reader.result;
-            let results = await callApi('searchImage', base64data);
+            const jsonBody = JSON.stringify({ 
+                "Data": base64data, 
+                "ImageType": milestone.challenge.image.type.split("/")[1],
+                "Language": rules.dictionaryId.value ?? 'en' 
+            });
+
+            let results = await callApi('searchImage', jsonBody);
 
             for (let i = 0; i < results.length; i++) {
                 socket.emit("submitGuess", results[i]);
@@ -67,7 +78,7 @@ async function callApi(action, body) {
 
     let results = await fetch(nodeSrvUrl, {
         method: "POST",
-        body: JSON.stringify({ "Data": body, "Language": rules.dictionaryId.value ?? 'en' }),
+        body: body,
         headers: {
             "Content-Type": "application/json"
         }
