@@ -2,61 +2,73 @@ import natural from 'natural';
 const tokenizer = new natural.WordTokenizer();
 
 export default class WordFrequencyAnalyzer {
-    calculateWordFrequency(descriptions, topResultsNumber) {
-        const wordFrequency = {};
+    calculateWordFrequency(descriptions, prompt = "") {
+        const promptWords = this.preprocessText(prompt).split(' ');
+        let wordScores = {};
 
-        descriptions.forEach(description => {
+        // Calculate word scores based on frequency and position in descriptions
+        descriptions.forEach((description, index) => {
             const processedText = this.preprocessText(description);
-            const singleWords = tokenizer.tokenize(processedText);
+            const tokens = tokenizer.tokenize(processedText);
 
-            singleWords.forEach(word => {
-                wordFrequency[word] = (wordFrequency[word] || 0) + 1;
+            // Consider individual words
+            tokens.forEach((word, position) => {
+                // Exclude prompt words from scoring
+                if (!promptWords.includes(word)) {
+                    const score = 1 / (position + 1);
+                    wordScores[word] = (wordScores[word] || 0) + score;
+                }
             });
 
-            const maxPhraseLength = topResultsNumber;
-            for (let i = 2; i <= maxPhraseLength; i++) {
+            // Consider phrases (n-grams)
+            const phraseMaxLength = 5; // Arbitrary
+            for (let i = 2; i <= phraseMaxLength; i++) {
                 const ngrams = natural.NGrams.ngrams(processedText, i);
-                ngrams.forEach(ngram => {
+                ngrams.forEach((ngram, position) => {
                     const ngramStr = ngram.join(' ');
-                    wordFrequency[ngramStr] = (wordFrequency[ngramStr] || 0) + 1;
+                    // Exclude prompt words from scoring
+                    if (!promptWords.some(word => ngram.includes(word))) {
+                        const score = 1 / (position + 1);
+                        wordScores[ngramStr] = (wordScores[ngramStr] || 0) + score;
+                    }
                 });
             }
         });
+        
+        // Filter out word scores that are superior to 1
+        wordScores = Object.fromEntries(
+            Object.entries(wordScores).filter(([word, score]) => score > 1)
+        );
 
-        return this.extractTopWords(wordFrequency, topResultsNumber);
+        // Prioritize phrases based on scores compared to individual words
+        const phrases = Object.keys(wordScores)
+            .filter(phrase => phrase.split(' ').length > 1); // Filter out single words
+
+        phrases.forEach(phrase => {
+            const words = phrase.split(' ');
+            const phraseScore = wordScores[phrase];
+
+            let individualWordsScore = [];
+            words.forEach((word) => {
+                individualWordsScore.push(wordScores[word]);
+            });
+
+            // Check if phrase score has equal or better score than one of its individual words
+            if (individualWordsScore.some(word => word <= phraseScore)) {
+                wordScores[phrase] *= 3; // Triple the score to prioritize phrase
+            }
+        });
+
+        // Sort word scores in descending order
+        return Object.entries(wordScores).sort((a, b) => b[1] - a[1]);
     }
-
+    
     preprocessText(text) {
         return text
             .toLowerCase()
             .normalize("NFD")
             .replace(/[\u0300-\u036f]/g, "")
-            .replace(/'/g, "");
-    }
-
-    extractTopWords(frequencyMap, n) {
-        const topWords = [];
-        const topPhrases = {};
-
-        const sortedWords = Object.entries(frequencyMap).sort((a, b) => b[1] - a[1]);
-
-        sortedWords.forEach(([word, frequency]) => {
-            const wordCount = word.split(' ').length;
-            if (frequency > 1) { // Exclude words with frequency of one
-                if (wordCount === 1 && topWords.length === 0) {
-                    topWords.push([word, frequency]);
-                }
-                else if (wordCount > 1 && !topPhrases[wordCount]) {
-                    topPhrases[wordCount] = [word, frequency];
-                }
-            }
-        });
-
-        Object.values(topPhrases).forEach(phrase => {
-            topWords.push(phrase);
-        });
-
-        // Return the top words and phrases
-        return topWords.slice(0, n);
+            .replace(/'/g, "")
+            .replace('-', ' ');
     }
 }

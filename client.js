@@ -20,13 +20,8 @@ setInterval(async function () {
             "Language": rules.dictionaryId.value ?? 'en'
          });
 
-        let answers = await callApi('askQuestion', jsonBody);
-        answers.titles.forEach(title => {
-            console.log('title', title);
-        });
-        answers.descriptions.forEach(desc => {
-            console.log('description',desc);
-        });
+        let results = await callApi('askQuestion', jsonBody);
+        await attemptGuesses(results);
     }
 
     if(milestone?.challenge?.image?.data === undefined) {
@@ -51,20 +46,7 @@ setInterval(async function () {
             });
 
             let results = await callApi('searchImage', jsonBody);
-
-            for (let i = 0; i < results.length; i++) {
-                socket.emit("submitGuess", results[i]);
-                
-                await delay(100);
-                
-                if (milestone.playerStatesByPeerId[selfPeerId]?.hasFoundSource) {
-                    console.log('Réponse trouvée !', results[i]);
-                    break;
-                }
-            }
-
-            if(!milestone.playerStatesByPeerId[selfPeerId]?.hasFoundSource)
-                socket.emit("submitGuess", results[0].charAt(0));
+            await attemptGuesses(results);
 
             let endTime = new Date();
             let timeElapsed = endTime - startTime;
@@ -92,4 +74,27 @@ async function callApi(action, body) {
         })
 
     return results;
+}
+
+async function attemptGuesses(guesses) {
+    if(guesses.length < 1) {
+        console.log("Aucune réponse n'a été trouvée");
+        return;
+    }
+
+    console.log(JSON.stringify(guesses));
+
+    for (let i = 0; i < guesses.length; i++) {
+        socket.emit("submitGuess", guesses[i]);
+        
+        await delay(100);
+        
+        if (milestone.playerStatesByPeerId[selfPeerId]?.hasFoundSource) {
+            console.log('Réponse trouvée !', guesses[i]);
+            break;
+        }
+    }
+    
+    if(!milestone.playerStatesByPeerId[selfPeerId]?.hasFoundSource)
+        socket.emit("submitGuess", guesses[0].charAt(0));
 }

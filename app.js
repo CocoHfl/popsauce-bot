@@ -39,22 +39,32 @@ app.post('/api/askQuestion', async (req, res) => {
         page: 0,
         safe: false,
         parse_ads: false,
+        additional_params: {
+            hl: req.body['Language']
+        }
     }
 
-    const response = await google.search(req.body['Data'], options);
+    const prompt = preprocessText(req.body['Data']);
+    const response = await google.search(prompt, options);
 
-    let answers = {
-        titles: [],
-        descriptions: []
-    };
+    let answers = [];
+    if(response.featured_snippet.title != null)
+        answers.push(response?.featured_snippet.title);
+
+    if(response.featured_snippet.description != null)
+        answers.push(response?.featured_snippet.description);
 
     response.results.forEach(element => {
-        answers.titles.push(element.title);
-        answers.descriptions.push(element.description);
+        answers.push(element.title);
+        answers.push(element.description);
     });
 
-    res.status(200).send(answers);
-})
+    const analyzer = new wordFrequencyAnalyzer();
+    const calculatedAnswers = analyzer.calculateWordFrequency(answers, prompt);
+
+    const firstValues = calculatedAnswers.map(subArray => subArray[0]);
+    res.status(200).send(firstValues);
+});
 
 app.post('/api/searchImage', (req, res) => {
     let base64Data;
@@ -111,7 +121,7 @@ function callGoogleLens(binaryData, language, res) {
                         Object.entries(results).map(([key, arr]) => [key, arr.map(str => str.replace(/[\/\\#,+()$~%.'":*?<>{}-]/g, '').substring(0, 50))])
                     );
                     const analyzer = new wordFrequencyAnalyzer();
-                    const calculatedGuesses = analyzer.calculateWordFrequency(guesses.descriptions, 4);
+                    const calculatedGuesses = analyzer.calculateWordFrequency(guesses.descriptions);
 
                     const firstValues = calculatedGuesses.map(subArray => subArray[0]);
                     const mergedArray = guesses.associatedSearches.concat(firstValues);
@@ -175,4 +185,16 @@ async function pushResults(elements, page, results, maxResults) {
             results.push(value);
         }
     }
+}
+
+function preprocessText(text) {
+    return text
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/'/g, "")
+        .replace(/(\r\n|\n|\r)/gm, " ")
+        .replace('-', ' ')
+        .replace(/[\u266b]/g, "") //♫
+        .replace(/\s+/g, " ");
 }
