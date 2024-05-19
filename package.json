@@ -19,6 +19,7 @@
     "puppeteer": "^22.7.1",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "stopword": "^3.0.1",
     "svg2img": "^1.0.0-beta.2"
   },
   "type": "module"

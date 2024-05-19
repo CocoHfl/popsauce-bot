@@ -1,66 +1,70 @@
 import natural from 'natural';
+import { removeStopwords, eng, fra } from 'stopword';
 const tokenizer = new natural.WordTokenizer();
 
 export default class WordFrequencyAnalyzer {
-    calculateWordFrequency(descriptions, prompt = "") {
-        const promptWords = this.preprocessText(prompt).split(' ');
-        let wordScores = {};
+    calculateWordFrequency(descriptions, language, question) {
+        const questionWords = this.preprocessText(question).split(' ');
+        let wordCounts = {};
 
-        // Calculate word scores based on frequency and position in descriptions
-        descriptions.forEach((description, index) => {
+        // Calculate word frequencies
+        descriptions.forEach((description) => {
             const processedText = this.preprocessText(description);
             const tokens = tokenizer.tokenize(processedText);
 
+            // Extract individual words and apply stopword removal
+            const individualWords = tokens.filter(word => !questionWords.includes(word) && !this.isNumber(word));
+            const noStopWords = removeStopwords(individualWords, language == 'fr' ? fra : eng);
+
             // Consider individual words
-            tokens.forEach((word, position) => {
-                // Exclude prompt words from scoring
-                if (!promptWords.includes(word)) {
-                    const score = 1 / (position + 1);
-                    wordScores[word] = (wordScores[word] || 0) + score;
-                }
+            noStopWords.forEach((cleanedWord) => {
+                wordCounts[cleanedWord] = (wordCounts[cleanedWord] || 0) + 1;
             });
 
             // Consider phrases (n-grams)
             const phraseMaxLength = 5; // Arbitrary
             for (let i = 2; i <= phraseMaxLength; i++) {
                 const ngrams = natural.NGrams.ngrams(processedText, i);
-                ngrams.forEach((ngram, position) => {
+                ngrams.forEach((ngram) => {
                     const ngramStr = ngram.join(' ');
-                    // Exclude prompt words from scoring
-                    if (!promptWords.some(word => ngram.includes(word))) {
-                        const score = 1 / (position + 1);
-                        wordScores[ngramStr] = (wordScores[ngramStr] || 0) + score;
+                    // Exclude question words from scoring
+                    if (!questionWords.some(word => ngram.includes(word))) {
+                        wordCounts[ngramStr] = (wordCounts[ngramStr] || 0) + 1;
                     }
                 });
             }
         });
-        
-        // Filter out word scores that are superior to 1
-        wordScores = Object.fromEntries(
-            Object.entries(wordScores).filter(([word, score]) => score > 1)
+
+        // Filter out word counts that are superior to 1
+        wordCounts = Object.fromEntries(
+            Object.entries(wordCounts).filter(([word, count]) => count > 1)
         );
 
-        // Prioritize phrases based on scores compared to individual words
-        const phrases = Object.keys(wordScores)
+        // Prioritize phrases based on counts compared to individual words
+        const phrases = Object.keys(wordCounts)
             .filter(phrase => phrase.split(' ').length > 1); // Filter out single words
 
         phrases.forEach(phrase => {
             const words = phrase.split(' ');
-            const phraseScore = wordScores[phrase];
 
-            let individualWordsScore = [];
+            let individualWordsCount = [];
             words.forEach((word) => {
-                individualWordsScore.push(wordScores[word]);
+                individualWordsCount.push(wordCounts[word]);
             });
-
-            // Check if phrase score has equal or better score than one of its individual words
-            if (individualWordsScore.some(word => word <= phraseScore)) {
-                wordScores[phrase] *= 3; // Triple the score to prioritize phrase
-            }
         });
 
-        // Sort word scores in descending order
-        return Object.entries(wordScores).sort((a, b) => b[1] - a[1]);
+        console.log(wordCounts);
+
+        // Sort word in descending order by count
+        // Entries with same count are then sorted by length (longer first)
+        const sortedWordCounts = Object.entries(wordCounts).sort((a, b) => {
+            const countDiff = b[1] - a[1];
+            if (countDiff !== 0) return countDiff;
+            return b[0].split(' ').length - a[0].split(' ').length;
+        });
+
+        // Return top 5 results
+        return sortedWordCounts.slice(0, 5)
     }
     
     preprocessText(text) {
@@ -69,6 +73,10 @@ export default class WordFrequencyAnalyzer {
             .normalize("NFD")
             .replace(/[\u0300-\u036f]/g, "")
             .replace(/'/g, "")
-            .replace('-', ' ');
+            .replace(/[-\u2014\u201d\u201c!.,"]/g, "");
+    }
+
+    isNumber(word) {
+        return /^\d+$/.test(word);
     }
 }

@@ -13,10 +13,11 @@ setInterval(async function () {
     }
 
     if(milestone?.challenge?.text && !textQuestionDetected) {
-        console.log('Question texte détectée !');
+        console.log('🔔 Question texte détectée !');
         textQuestionDetected = true;
         const jsonBody = JSON.stringify({ 
-            "Data": milestone?.challenge?.prompt + ' ' + milestone?.challenge?.text, 
+            "Prompt": milestone?.challenge?.prompt,
+            "Text": milestone?.challenge?.text,
             "Language": rules.dictionaryId.value ?? 'en'
          });
 
@@ -29,7 +30,7 @@ setInterval(async function () {
     }
 
     if (milestone?.challenge?.image?.data && !imageDetected) {
-        console.log('Question image détectée !');
+        console.log('🛎️ Question image détectée !');
         imageDetected = true;
         startTime = new Date();
     
@@ -40,7 +41,9 @@ setInterval(async function () {
         reader.onloadend = async function () {
             let base64data = reader.result;
             const jsonBody = JSON.stringify({ 
-                "Data": base64data, 
+                "Prompt": milestone?.challenge?.prompt,
+                "Text": milestone?.challenge?.text,
+                "ImageData": base64data, 
                 "ImageType": milestone.challenge.image.type.split("/")[1],
                 "Language": rules.dictionaryId.value ?? 'en' 
             });
@@ -77,24 +80,21 @@ async function callApi(action, body) {
 }
 
 async function attemptGuesses(guesses) {
-    if(guesses.length < 1) {
-        console.log("Aucune réponse n'a été trouvée");
-        return;
-    }
-
     console.log(JSON.stringify(guesses));
 
-    for (let i = 0; i < guesses.length; i++) {
+    for (let i = 0; i < guesses?.length; i++) {
         socket.emit("submitGuess", guesses[i]);
         
-        await delay(100);
+        await delay(500);
         
         if (milestone.playerStatesByPeerId[selfPeerId]?.hasFoundSource) {
-            console.log('Réponse trouvée !', guesses[i]);
-            break;
+            console.log('✔️ Réponse trouvée !', guesses[i]);
+            return;
         }
     }
-    
-    if(!milestone.playerStatesByPeerId[selfPeerId]?.hasFoundSource)
+
+    if(guesses?.length > 0)
         socket.emit("submitGuess", guesses[0].charAt(0));
+
+    console.log("❌ Aucune réponse n'a été trouvée");
 }

@@ -44,8 +44,8 @@ app.post('/api/askQuestion', async (req, res) => {
         }
     }
 
-    const prompt = preprocessText(req.body['Data']);
-    const response = await google.search(prompt, options);
+    const question = preprocessText(`${req.body['Prompt']} ${req.body['Text']}`);
+    const response = await google.search(question, options);
 
     let answers = [];
     if(response.featured_snippet.title != null)
@@ -60,7 +60,7 @@ app.post('/api/askQuestion', async (req, res) => {
     });
 
     const analyzer = new wordFrequencyAnalyzer();
-    const calculatedAnswers = analyzer.calculateWordFrequency(answers, prompt);
+    const calculatedAnswers = analyzer.calculateWordFrequency(answers, req.body['Language'], question);
 
     const firstValues = calculatedAnswers.map(subArray => subArray[0]);
     res.status(200).send(firstValues);
@@ -72,7 +72,7 @@ app.post('/api/searchImage', (req, res) => {
     
     if(req.body['ImageType'] == "svg+xml") {
         svg2img(
-            req.body['Data'],
+            req.body['ImageData'],
             function (error, buffer) {
                 if (error) {
                     res.status(500).send();
@@ -82,15 +82,16 @@ app.post('/api/searchImage', (req, res) => {
                 binaryData = buffer;
             });
     } else {
-        base64Data = req.body['Data'].replace(`data:image/${req.body['ImageType']};base64,`, "");
+        base64Data = req.body['ImageData'].replace(`data:image/${req.body['ImageType']};base64,`, "");
         base64Data += base64Data.replace('+', ' ');
         binaryData = Buffer.from(base64Data, 'base64');
     }
 
-    callGoogleLens(binaryData, req.body['Language'], res);
+    const question = preprocessText(`${req.body['Prompt']} ${req.body['Text']}`);
+    callGoogleLens(binaryData, req.body['Language'], question, res);
 })
 
-function callGoogleLens(binaryData, language, res) {
+function callGoogleLens(binaryData, language, question, res) {
     const form = new FormData();
     form.append('encoded_image', binaryData, 'image.jpg');
 
@@ -121,7 +122,7 @@ function callGoogleLens(binaryData, language, res) {
                         Object.entries(results).map(([key, arr]) => [key, arr.map(str => str.replace(/[\/\\#,+()$~%.'":*?<>{}-]/g, '').substring(0, 50))])
                     );
                     const analyzer = new wordFrequencyAnalyzer();
-                    const calculatedGuesses = analyzer.calculateWordFrequency(guesses.descriptions);
+                    const calculatedGuesses = analyzer.calculateWordFrequency(guesses.descriptions, language, question);
 
                     const firstValues = calculatedGuesses.map(subArray => subArray[0]);
                     const mergedArray = guesses.associatedSearches.concat(firstValues);
