@@ -53,9 +53,7 @@ export default class WordFrequencyAnalyzer {
             });
         });
 
-        console.log(wordCounts);
-
-        // Sort word in descending order by count
+        // Sort words in descending order by count
         // Entries with same count are then sorted by length (longer first)
         const sortedWordCounts = Object.entries(wordCounts).sort((a, b) => {
             const countDiff = b[1] - a[1];
