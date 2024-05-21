@@ -17,17 +17,17 @@ export default class ImageSearch {
     
     async searchImage() {
         try {
-            const binary = await this.getBinaryFromBase64(this.imageData, this.imageType);
+            const binary = await this.getBinaryFromBase64();
             return await this.callGoogleLens(binary);
         } catch (error) {
             throw new Error('Error in searchImage: ' + error.message);
         }
     }
 
-    getBinaryFromBase64(imageData, imageType) {
-        if (imageType === "svg+xml") {
+    getBinaryFromBase64() {
+        if (this.imageType === "svg+xml") {
             return new Promise((resolve, reject) => {
-                svg2img(imageData, (error, buffer) => {
+                svg2img(this.imageData, (error, buffer) => {
                     if (error) {
                         reject(new Error(`Failed to convert SVG: ${err}`));
                     } else {
@@ -36,7 +36,7 @@ export default class ImageSearch {
                 });
             });
         } else {
-            let base64Data = imageData.replace(`data:image/${imageType};base64,`, '');
+            let base64Data = this.imageData.replace(`data:image/${this.imageType};base64,`, '');
             base64Data = base64Data.replace(/\s/g, '+');
             return Buffer.from(base64Data, 'base64');
         }
