@@ -1,19 +1,20 @@
 import natural from 'natural';
 import { removeStopwords, eng, fra } from 'stopword';
+import Utils from './utils.js';
 const tokenizer = new natural.WordTokenizer();
 
 export default class WordFrequencyAnalyzer {
     calculateWordFrequency(descriptions, language, question) {
-        const questionWords = this.preprocessText(question).split(' ');
+        const questionWords = Utils.preprocessText(question).split(' ');
         let wordCounts = {};
 
         // Calculate word frequencies
         descriptions.forEach((description) => {
-            const processedText = this.preprocessText(description);
+            const processedText = Utils.preprocessText(description);
             const tokens = tokenizer.tokenize(processedText);
 
             // Extract individual words and apply stopword removal
-            const individualWords = tokens.filter(word => !questionWords.includes(word) && !this.isNumber(word));
+            const individualWords = tokens.filter(word => !questionWords.includes(word) && !Utils.isNumber(word));
             const noStopWords = removeStopwords(individualWords, language == 'fr' ? fra : eng);
 
             // Consider individual words
@@ -63,18 +64,5 @@ export default class WordFrequencyAnalyzer {
 
         // Return top 5 results
         return sortedWordCounts.slice(0, 5)
-    }
-    
-    preprocessText(text) {
-        return text
-            .toLowerCase()
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "")
-            .replace(/'/g, "")
-            .replace(/[-\u2014\u201d\u201c!.,"]/g, "");
-    }
-
-    isNumber(word) {
-        return /^\d+$/.test(word);
     }
 }
