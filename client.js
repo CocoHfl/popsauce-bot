@@ -42,7 +42,6 @@ setInterval(async function () {
             let base64data = reader.result;
             const jsonBody = JSON.stringify({ 
                 "Prompt": milestone?.challenge?.prompt,
-                "Text": milestone?.challenge?.text,
                 "ImageData": base64data, 
                 "ImageType": milestone.challenge.image.type.split("/")[1],
                 "Language": rules.dictionaryId.value ?? 'en' 
