@@ -68,7 +68,7 @@ class Server {
 
     async searchImage(req, res) {
         try {
-            const imageSearch = new ImageSearch(req, res, this.page);
+            const imageSearch = new ImageSearch(req, this.page);
             const results = await imageSearch.searchImage();
             res.status(200).send(results);
         } catch (err) {

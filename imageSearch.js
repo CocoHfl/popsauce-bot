@@ -28,7 +28,7 @@ export default class ImageSearch {
         if (imageType === "svg+xml") {
             return new Promise((resolve, reject) => {
                 svg2img(imageData, (error, buffer) => {
-                    if (err) {
+                    if (error) {
                         reject(new Error(`Failed to convert SVG: ${err}`));
                     } else {
                         resolve(buffer);
