@@ -29,7 +29,7 @@ export default class ImageSearch {
             return new Promise((resolve, reject) => {
                 svg2img(this.imageData, (error, buffer) => {
                     if (error) {
-                        reject(new Error(`Failed to convert SVG: ${err}`));
+                        reject(new Error(`Failed to convert SVG: ${error}`));
                     } else {
                         resolve(buffer);
                     }
