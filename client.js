@@ -88,7 +88,7 @@ async function attemptGuesses(guesses) {
     await delay(500);
     
     if (milestone.playerStatesByPeerId[selfPeerId]?.hasFoundSource) {
-        console.log('✔️ Réponse trouvée !', milestone.playerStatesByPeerId[selfPeerId]?.guess);
+        console.log('✔️ Réponse trouvée !');
         return;
     }
 
