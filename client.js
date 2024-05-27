@@ -7,48 +7,49 @@ const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 console.clear();
 
-setInterval(async function () { 
-    if(milestone?.challenge?.text === undefined) {
-        textQuestionDetected = false;
-    }
+setInterval(async function () {
+    if (playersByPeerId[selfPeerId] == null)
+        return;
 
-    if(milestone?.challenge?.text && !textQuestionDetected) {
+    if (milestone?.challenge?.text === undefined)
+        textQuestionDetected = false;
+
+    if (milestone?.challenge?.text && !textQuestionDetected) {
         console.log('🔔 Question texte détectée !');
         textQuestionDetected = true;
-        const jsonBody = JSON.stringify({ 
+        const jsonBody = JSON.stringify({
             "Prompt": milestone?.challenge?.prompt,
             "Text": milestone?.challenge?.text,
             "Language": rules.dictionaryId.value ?? 'en'
-         });
+        });
 
         let results = await callApi('askQuestion', jsonBody);
         await attemptGuesses(results);
     }
 
-    if(milestone?.challenge?.image?.data === undefined) {
+    if (milestone?.challenge?.image?.data === undefined)
         imageDetected = false;
-    }
 
     if (milestone?.challenge?.image?.data && !imageDetected) {
         console.log('🛎️ Question image détectée !');
         imageDetected = true;
-    
+
         const blob = new Blob([milestone.challenge.image.data], { type: milestone.challenge.image.type });
         let reader = new FileReader();
         reader.readAsDataURL(blob);
-    
+
         reader.onloadend = async function () {
             let base64data = reader.result;
-            const jsonBody = JSON.stringify({ 
+            const jsonBody = JSON.stringify({
                 "Prompt": milestone?.challenge?.prompt,
-                "ImageData": base64data, 
+                "ImageData": base64data,
                 "ImageType": milestone.challenge.image.type.split("/")[1],
-                "Language": rules.dictionaryId.value ?? 'en' 
+                "Language": rules.dictionaryId.value ?? 'en'
             });
 
             const results = await callApi('searchImage', jsonBody);
 
-            if(results !== undefined)
+            if (results !== undefined)
                 await attemptGuesses(results);
         }
     }
@@ -64,15 +65,15 @@ async function callApi(action, body) {
             "Content-Type": "application/json"
         }
     })
-    .then(async response => {
-        if (response.ok) {
-            return await response.json();
-        }
-        throw new Error('An error occured. Response not OK');
-    })
-    .catch((error) => {
-        console.error('Error:', error);
-    });
+        .then(async response => {
+            if (response.ok) {
+                return await response.json();
+            }
+            throw new Error('An error occured. Response not OK');
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
 
     return results;
 }
@@ -82,16 +83,16 @@ async function attemptGuesses(guesses) {
 
     for (let i = 0; i < guesses?.length; i++) {
         socket.emit("submitGuess", guesses[i]);
-        
+
         await delay(500);
-        
+
         if (milestone.playerStatesByPeerId[selfPeerId]?.hasFoundSource) {
             console.log('✔️ Réponse trouvée !', guesses[i]);
             return;
         }
     }
 
-    if(guesses?.length > 0)
+    if (guesses?.length > 0)
         socket.emit("submitGuess", guesses[0].charAt(0));
 
     console.log("❌ Aucune réponse n'a été trouvée");
