@@ -83,13 +83,13 @@ async function attemptGuesses(guesses) {
 
     for (let i = 0; i < guesses?.length; i++) {
         socket.emit("submitGuess", guesses[i]);
-
-        await delay(500);
-
-        if (milestone.playerStatesByPeerId[selfPeerId]?.hasFoundSource) {
-            console.log('✔️ Réponse trouvée !', guesses[i]);
-            return;
-        }
+    }
+    
+    await delay(500);
+    
+    if (milestone.playerStatesByPeerId[selfPeerId]?.hasFoundSource) {
+        console.log('✔️ Réponse trouvée !', milestone.playerStatesByPeerId[selfPeerId]?.guess);
+        return;
     }
 
     if (guesses?.length > 0)
