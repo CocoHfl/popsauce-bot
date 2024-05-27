@@ -32,7 +32,6 @@ setInterval(async function () {
     if (milestone?.challenge?.image?.data && !imageDetected) {
         console.log('🛎️ Question image détectée !');
         imageDetected = true;
-        startTime = new Date();
     
         const blob = new Blob([milestone.challenge.image.data], { type: milestone.challenge.image.type });
         let reader = new FileReader();
@@ -47,12 +46,10 @@ setInterval(async function () {
                 "Language": rules.dictionaryId.value ?? 'en' 
             });
 
-            let results = await callApi('searchImage', jsonBody);
-            await attemptGuesses(results);
+            const results = await callApi('searchImage', jsonBody);
 
-            let endTime = new Date();
-            let timeElapsed = endTime - startTime;
-            console.log('Temps de réponse (ms)', timeElapsed);
+            if(results !== undefined)
+                await attemptGuesses(results);
         }
     }
 }, 10);
@@ -60,20 +57,22 @@ setInterval(async function () {
 async function callApi(action, body) {
     const nodeSrvUrl = `http://localhost:5000/api/${action}`;
 
-    let results = await fetch(nodeSrvUrl, {
+    const results = await fetch(nodeSrvUrl, {
         method: "POST",
         body: body,
         headers: {
             "Content-Type": "application/json"
         }
     })
-        .then(response => {
-            if (!response.ok) {
-                //TODO
-            } else {
-                return response.json();
-            }
-        })
+    .then(async response => {
+        if (response.ok) {
+            return await response.json();
+        }
+        throw new Error('An error occured. Response not OK');
+    })
+    .catch((error) => {
+        console.error('Error:', error);
+    });
 
     return results;
 }
