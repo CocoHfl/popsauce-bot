@@ -15,7 +15,7 @@ setInterval(async function () {
         textQuestionDetected = false;
 
     if (milestone?.challenge?.text && !textQuestionDetected) {
-        console.log('🔔 Question texte détectée !');
+        console.log('🔔 Text question detected!');
         textQuestionDetected = true;
         const jsonBody = JSON.stringify({
             "Prompt": milestone?.challenge?.prompt,
@@ -31,7 +31,7 @@ setInterval(async function () {
         imageDetected = false;
 
     if (milestone?.challenge?.image?.data && !imageDetected) {
-        console.log('🛎️ Question image détectée !');
+        console.log('🛎️ Image question detected!');
         imageDetected = true;
 
         const blob = new Blob([milestone.challenge.image.data], { type: milestone.challenge.image.type });
@@ -88,12 +88,12 @@ async function attemptGuesses(guesses) {
     await delay(500);
     
     if (milestone.playerStatesByPeerId[selfPeerId]?.hasFoundSource) {
-        console.log('✔️ Réponse trouvée !');
+        console.log('✔️ Answer found!');
         return;
     }
 
     if (guesses?.length > 0)
         socket.emit("submitGuess", guesses[0].charAt(0));
 
-    console.log("❌ Aucune réponse n'a été trouvée");
+    console.log("❌ No answer found");
 }
