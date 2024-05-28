@@ -70,6 +70,7 @@ export default class ImageSearch {
                         console.log('Google Lens URL', gLensUrl);
     
                         const results = await this.getLensResults(gLensUrl);
+
                         let guesses = Object.fromEntries(
                             Object.entries(results).map(([key, arr]) => [key, arr.map(str => str.replace(/[\/\\#,+()$~%.'":*?<>{}-]/g, '').substring(0, 50))])
                         );
@@ -96,10 +97,9 @@ export default class ImageSearch {
     }
 
     async getLensResults(url) {
-        await this.page.setDefaultNavigationTimeout(60000);
         await this.page.goto(url);
     
-        const rejectCookiesBtn = "#yDmH0d > c-wiz > div > div > div > div.NIoIEf > div.G4njw > div.AIC7ge > div.CxJub > div.VtwTSb > form:nth-child(1) > div > div > button"
+        const rejectCookiesBtn = "#yDmH0d > c-wiz > div > div > div > div.NIoIEf > div.G4njw > div.AIC7ge > div.CxJub > div.VtwTSb > form:nth-child(1) > div > div > button";
     
         if (await this.page.$(rejectCookiesBtn))
             this.page.$eval(rejectCookiesBtn, form => form.click());
@@ -108,7 +108,15 @@ export default class ImageSearch {
     }
 
     async getResultsFromPage(maxResults) {
-        await this.page.waitForSelector(".G19kAf", {timeout: 5000});
+        const searchItemClass = ".G19kAf";
+
+        try {
+            await this.page.waitForSelector(searchItemClass, {timeout: 1000});
+        } catch {
+            // Case where page is invalid: reload and try once more
+            await this.page.reload();
+            await this.page.waitForSelector(searchItemClass, {timeout: 1000});
+        }
     
         let results = {
             associatedSearches: [],
