@@ -78,8 +78,9 @@ export default class ImageSearch {
     
                         const firstValues = calculatedGuesses.map(subArray => subArray[0]);
                         const mergedArray = guesses.associatedSearches.concat(firstValues);
+                        const top5words = mergedArray.slice(0, 5);
     
-                        resolve(mergedArray);
+                        resolve(top5words);
                     } catch (err) {
                         reject(new Error(`Failed to process Google Lens page: ${err}`));
                     }

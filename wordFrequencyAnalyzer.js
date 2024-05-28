@@ -62,7 +62,6 @@ export default class WordFrequencyAnalyzer {
             return b[0].split(' ').length - a[0].split(' ').length;
         });
 
-        // Return top 5 results
-        return sortedWordCounts.slice(0, 5)
+        return sortedWordCounts;
     }
 }

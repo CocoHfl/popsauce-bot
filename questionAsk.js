@@ -35,7 +35,9 @@ export default class QuestionAsk {
                 const calculatedGuesses = analyzer.calculateWordFrequency(searchResults, this.language, this.question);
             
                 const firstValues = calculatedGuesses.map(subArray => subArray[0]);
-                resolve(firstValues);
+                const top5words = firstValues.slice(0, 5);
+
+                resolve(top5words);
             } catch (err) {
                 reject(new Error(`Failed to get guesses: ${err}`));
             }
