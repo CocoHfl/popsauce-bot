@@ -1,8 +1,8 @@
 import https from 'https';
 import FormData from 'form-data';
 import svg2img from 'svg2img';
-import WordFrequencyAnalyzer from './wordFrequencyAnalyzer.js';
-import Utils from './utils.js'
+import WordFrequencyAnalyzer from '../utils/wordFrequencyAnalyzer.js';
+import Utils from '../utils/utils.js'
 
 export default class ImageSearch {
     constructor(request, page) {

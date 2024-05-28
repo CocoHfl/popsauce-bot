@@ -1,6 +1,6 @@
 import google from 'googlethis';
-import WordFrequencyAnalyzer from './wordFrequencyAnalyzer.js';
-import Utils from './utils.js'
+import WordFrequencyAnalyzer from '../utils/wordFrequencyAnalyzer.js';
+import Utils from '../utils/utils.js'
 
 export default class QuestionAsk {
     constructor(request) {

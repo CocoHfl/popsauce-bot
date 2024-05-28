@@ -2,8 +2,8 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
-import ImageSearch from './imageSearch.js';
-import QuestionAsk from './QuestionAsk.js';
+import ImageSearch from './services/imageSearch.js';
+import QuestionAsk from './services/questionAsk.js';
 
 class Server {
     constructor() {
