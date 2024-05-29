@@ -1,7 +1,8 @@
-let startTime;
-let endTime;
 let imageDetected = false;
 let textQuestionDetected = false;
+
+// Guess time, in milliseconds
+let bot = { guessTime : 0 };
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -14,50 +15,52 @@ setInterval(async function () {
     if (milestone?.challenge?.text === undefined)
         textQuestionDetected = false;
 
-    if (milestone?.challenge?.text && !textQuestionDetected) {
-        console.log('🔔 Text question detected!');
-        textQuestionDetected = true;
-        const jsonBody = JSON.stringify({
-            "Prompt": milestone?.challenge?.prompt,
-            "Text": milestone?.challenge?.text,
-            "Language": rules.dictionaryId.value ?? 'en'
-        });
-
-        let results = await callApi('askQuestion', jsonBody);
-        await attemptGuesses(results);
-    }
+    if (milestone?.challenge?.text && !textQuestionDetected)
+        handleDetection('Text')
 
     if (milestone?.challenge?.image?.data === undefined)
         imageDetected = false;
 
-    if (milestone?.challenge?.image?.data && !imageDetected) {
-        console.log('🛎️ Image question detected!');
-        imageDetected = true;
-
-        const blob = new Blob([milestone.challenge.image.data], { type: milestone.challenge.image.type });
-        let reader = new FileReader();
-        reader.readAsDataURL(blob);
-
-        reader.onloadend = async function () {
-            let base64data = reader.result;
-            const jsonBody = JSON.stringify({
-                "Prompt": milestone?.challenge?.prompt,
-                "ImageData": base64data,
-                "ImageType": milestone.challenge.image.type.split("/")[1],
-                "Language": rules.dictionaryId.value ?? 'en'
-            });
-
-            const results = await callApi('searchImage', jsonBody);
-
-            if (results !== undefined)
-                await attemptGuesses(results);
-        }
-    }
+    if (milestone?.challenge?.image?.data && !imageDetected)
+        handleDetection('Image');
 }, 10);
 
-async function callApi(action, body) {
-    const nodeSrvUrl = `http://localhost:5000/api/${action}`;
+async function handleDetection(questionType) {
+    let jsonBody;
+    let startTime = new Date();
+    if(questionType == 'Image') {
+        console.log('🛎️ Image question detected!');
+        imageDetected = true;
+        const base64data = await blobToBase64(new Blob([milestone.challenge.image.data], { type: milestone.challenge.image.type }))
+        jsonBody = JSON.stringify({
+            "Prompt": milestone?.challenge?.prompt,
+            "ImageData": base64data,
+            "ImageType": milestone.challenge.image.type.split("/")[1],
+            "Language": rules.dictionaryId.value ?? 'en'
+        });
+    } else {
+        console.log('🔔 Text question detected!');
+        textQuestionDetected = true;
+        jsonBody = JSON.stringify({
+            "Prompt": milestone?.challenge?.prompt,
+            "Text": milestone.challenge.text,
+            "Language": rules.dictionaryId.value ?? 'en'
+        });
+    }
 
+    const results = await callApi(questionType, jsonBody);
+
+    const timeElapsed = new Date() - startTime;
+    if(bot.guessTime > timeElapsed)
+        await delay(bot.guessTime - timeElapsed);
+
+    if (results !== undefined)
+        await attemptGuesses(results);
+}
+
+async function callApi(questionType, body) {
+    const action = questionType == 'Image' ? 'searchImage' : 'askQuestion';
+    const nodeSrvUrl = `http://localhost:5000/api/${action}`;
     const results = await fetch(nodeSrvUrl, {
         method: "POST",
         body: body,
@@ -65,15 +68,15 @@ async function callApi(action, body) {
             "Content-Type": "application/json"
         }
     })
-        .then(async response => {
-            if (response.ok) {
-                return await response.json();
-            }
-            throw new Error('An error occured. Response not OK');
-        })
-        .catch((error) => {
-            console.error('Error:', error);
-        });
+    .then(async response => {
+        if (response.ok) {
+            return await response.json();
+        }
+        throw new Error('An error occured. Response not OK');
+    })
+    .catch((error) => {
+        console.error('Error:', error);
+    });
 
     return results;
 }
@@ -81,10 +84,9 @@ async function callApi(action, body) {
 async function attemptGuesses(guesses) {
     console.log(JSON.stringify(guesses));
 
-    for (let i = 0; i < guesses?.length; i++) {
+    for (let i = 0; i < guesses?.length; i++)
         socket.emit("submitGuess", guesses[i]);
-    }
-    
+
     await delay(500);
     
     if (milestone.playerStatesByPeerId[selfPeerId]?.hasFoundSource) {
@@ -97,3 +99,10 @@ async function attemptGuesses(guesses) {
 
     console.log("❌ No answer found");
 }
+
+const blobToBase64 = blob => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = err => reject(err)
+    reader.readAsDataURL(blob)
+});
