@@ -30,6 +30,6 @@ node app.js
 
 That's it! You're now ready to use Pop Sauce Bot.
 
-### Commands list
+## Commands list
 - **guessTime:** Sets a delay (in milliseconds) for the bot to wait before submitting answers. Note that if the processing time prior to submitting exceeds this set time, the delay may not be respected.  
 _Default value: 0_
