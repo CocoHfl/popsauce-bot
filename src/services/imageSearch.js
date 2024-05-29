@@ -63,9 +63,12 @@ export default class ImageSearch {
         
                 httpRes.on('end', async () => {
                     try {
-                        const body = Buffer.concat(chunks).toString();
-                        const id = body?.split('search?p=')[1]?.split('>')[0];
-                        const gLensUrl = `https://lens.google.com/search?hl=${this.language}&p=${id}`;
+                        const headersUrl = httpRes.headers['location'];
+
+                        const url = new URL(headersUrl);
+                        url.searchParams.set('hl', this.language);
+
+                        const gLensUrl = url.toString();
     
                         console.log('Google Lens URL', gLensUrl);
     
