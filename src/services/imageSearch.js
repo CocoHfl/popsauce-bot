@@ -73,12 +73,13 @@ export default class ImageSearch {
                         console.log('Google Lens URL', gLensUrl);
     
                         const guesses = await this.getLensResults(gLensUrl);
+                        const associatedSearchesFormat = guesses.associatedSearches.map(str => Utils.preprocessText(str).substring(0, 50));
 
                         const analyzer = new WordFrequencyAnalyzer();
                         const calculatedGuesses = analyzer.calculateWordFrequency(guesses.descriptions, this.language, this.question);
-    
-                        const firstValues = calculatedGuesses.map(subArray => subArray[0]);
-                        const mergedArray = guesses.associatedSearches.concat(firstValues);
+                        const calculatedGuessesValues = calculatedGuesses.map(subArray => subArray[0]);
+                        
+                        const mergedArray = associatedSearchesFormat.concat(calculatedGuessesValues);
                         const top5words = mergedArray.slice(0, 5);
     
                         resolve(top5words);
