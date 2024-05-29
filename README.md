@@ -20,7 +20,7 @@ node app.js
 4. Paste the following code into the console:
 
     ```javascript
-    fetch("https://raw.githubusercontent.com/coco13579/popsauce-bot/main/client.js")
+    fetch("https://raw.githubusercontent.com/cocohfl/popsauce-bot/main/client.js")
         .then(response => response.text())
         .then(script => eval(script));
     ```
