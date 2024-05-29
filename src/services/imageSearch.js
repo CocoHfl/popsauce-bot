@@ -72,11 +72,8 @@ export default class ImageSearch {
     
                         console.log('Google Lens URL', gLensUrl);
     
-                        const results = await this.getLensResults(gLensUrl);
+                        const guesses = await this.getLensResults(gLensUrl);
 
-                        let guesses = Object.fromEntries(
-                            Object.entries(results).map(([key, arr]) => [key, arr.map(str => str.replace(/[\/\\#,+()$~%.'":*?<>{}-]/g, '').substring(0, 50))])
-                        );
                         const analyzer = new WordFrequencyAnalyzer();
                         const calculatedGuesses = analyzer.calculateWordFrequency(guesses.descriptions, this.language, this.question);
     
