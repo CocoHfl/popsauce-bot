@@ -2,7 +2,7 @@ let imageDetected = false;
 let textQuestionDetected = false;
 
 // Guess time, in milliseconds
-let bot = { guessTime : 0 };
+window.guessTime = 0;
 
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -51,8 +51,8 @@ async function handleDetection(questionType) {
     const results = await callApi(questionType, jsonBody);
 
     const timeElapsed = new Date() - startTime;
-    if(bot.guessTime > timeElapsed)
-        await delay(bot.guessTime - timeElapsed);
+    if(window.guessTime > timeElapsed)
+        await delay(window.guessTime - timeElapsed);
 
     if (results !== undefined)
         await attemptGuesses(results);
