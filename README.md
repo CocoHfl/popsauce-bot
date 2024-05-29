@@ -10,7 +10,7 @@ Please note that the usage of this bot may violate the terms of service of jklm.
 ### Start NodeJS server
 ```
 npm install
-node app.js
+node src/app.js
 ```
 
 ### Inject client script into PopSauce lobby
