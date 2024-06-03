@@ -7,7 +7,7 @@ window.guessTime = 0;
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 console.clear();
-console.log('%c Pop Sauce Bot 🥤%c \n\n https://github.com/CocoHfl/popsauce-bot', 'font-size: 25px; color:white; background:#5c415a', '')
+console.log('%c Pop Sauce Bot 🥤%c \n\n https://github.com/CocoHfl/popsauce-bot', 'font-size: 25px; color:white; background:#5c415a', '');
 
 if (typeof playersByPeerId !== 'undefined') {
     console.log('✔️ Bot started!');
@@ -35,7 +35,7 @@ if (typeof playersByPeerId !== 'undefined') {
 async function handleDetection(questionType) {
     let jsonBody;
     let startTime = new Date();
-    if(questionType == 'Image') {
+    if (questionType == 'Image') {
         console.log('🛎️ Image question detected!');
         imageDetected = true;
         const base64data = await blobToBase64(new Blob([milestone.challenge.image.data], { type: milestone.challenge.image.type }))
@@ -58,7 +58,7 @@ async function handleDetection(questionType) {
     const results = await callApi(questionType, jsonBody);
 
     const timeElapsed = new Date() - startTime;
-    if(window.guessTime > timeElapsed)
+    if (window.guessTime > timeElapsed)
         await delay(window.guessTime - timeElapsed);
 
     if (results !== undefined)
@@ -75,15 +75,15 @@ async function callApi(questionType, body) {
             "Content-Type": "application/json"
         }
     })
-    .then(async response => {
-        if (response.ok) {
-            return await response.json();
-        }
-        throw new Error('An error occured. Response not OK');
-    })
-    .catch((error) => {
-        console.error('Error:', error);
-    });
+        .then(async response => {
+            if (response.ok) {
+                return await response.json();
+            }
+            throw new Error('An error occured. Response not OK');
+        })
+        .catch((error) => {
+            console.error('Error:', error);
+        });
 
     return results;
 }
@@ -95,7 +95,7 @@ async function attemptGuesses(guesses) {
         socket.emit("submitGuess", guesses[i]);
 
     await delay(500);
-    
+
     if (milestone.playerStatesByPeerId[selfPeerId]?.hasFoundSource) {
         console.log('✔️ Answer found!');
         return;
