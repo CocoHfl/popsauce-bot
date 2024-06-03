@@ -7,23 +7,30 @@ window.guessTime = 0;
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 console.clear();
+console.log('%c Pop Sauce Bot 🥤%c \n\n https://github.com/CocoHfl/popsauce-bot', 'font-size: 25px; color:white; background:#5c415a', '')
 
-setInterval(async function () {
-    if (playersByPeerId[selfPeerId] == null)
-        return;
+if (typeof playersByPeerId !== 'undefined') {
+    console.log('✔️ Bot started!');
 
-    if (milestone?.challenge?.text === undefined)
-        textQuestionDetected = false;
+    setInterval(async function () {
+        if (playersByPeerId[selfPeerId] == null)
+            return;
 
-    if (milestone?.challenge?.text && !textQuestionDetected)
-        handleDetection('Text')
+        if (milestone?.challenge?.text === undefined)
+            textQuestionDetected = false;
 
-    if (milestone?.challenge?.image?.data === undefined)
-        imageDetected = false;
+        if (milestone?.challenge?.text && !textQuestionDetected)
+            handleDetection('Text')
 
-    if (milestone?.challenge?.image?.data && !imageDetected)
-        handleDetection('Image');
-}, 10);
+        if (milestone?.challenge?.image?.data === undefined)
+            imageDetected = false;
+
+        if (milestone?.challenge?.image?.data && !imageDetected)
+            handleDetection('Image');
+    }, 10);
+} else {
+    console.log('❌ Could not start Pop Sauce Bot');
+}
 
 async function handleDetection(questionType) {
     let jsonBody;
